@@ -1,0 +1,6 @@
+openai
+streamlit
+pillow
+requests
+streamlit-drawable-canvas
+boto3
