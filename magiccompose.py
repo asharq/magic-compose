@@ -28,10 +28,11 @@ def craft_prompt(message, style):
         'Excited!': f"Human: Please rewrite the following message to sound more excited: '{message}'",
         'Chill': f"Human: Please make the following message sound more chill and relaxed: '{message}'",
         'Lyrical': f"Human: Please turn the following message into a short lyrical verse: '{message}'",
+        # 'Custom' style handling is integrated within the function itself
     }
 
-    # Select the prompt based on the chosen style
-    return style_prompts.get(style, f"Human: Please {style.lower()} the following message: '{message}'") + "\n\nAssistant:"
+    # Select the prompt based on the chosen style or use a custom style prompt
+    return style_prompts.get(style, f"Human: Please rewrite the following message to sound '{style}': '{message}'") + "\n\nAssistant:"
 
 def transform_message_with_bedrock(message, style):
     """
@@ -99,15 +100,19 @@ st.title('Magic Compose for Stylus and Keyboard: Transform writing with Gen AI')
 # User inputs the message they wish to transform
 user_message = st.text_area("Enter your message:", "How are you?")
 
-# Expanded list of user-selectable transformation styles
-transformation_style = st.radio(
-    "Choose your transformation style:",
-    ['Emojify', 'Make Formal', 'Make Polite', 'Shakespearify', 'Excited!', 'Chill', 'Lyrical']
-)
+# Expanded list of user-selectable transformation styles with an option for custom style
+transformation_styles = ['Emojify', 'Make Formal', 'Make Polite', 'Shakespearify', 'Excited!', 'Chill', 'Lyrical', 'Custom']
+selected_style = st.radio("Choose your transformation style:", transformation_styles)
+
+# Conditional display for custom style input
+if selected_style == 'Custom':
+    custom_style = st.text_input('Enter your custom style:')
+    transformation_style = custom_style  # Use the custom style for transformation
+else:
+    transformation_style = selected_style  # Use the predefined style
 
 # Button to initiate the transformation
 if st.button('Transform Message'):
-    # Directly calling the function and using its return value in st.success
     transformed_message = transform_message_with_bedrock(user_message, transformation_style)
     
     # Check if the transformed message is not an error message before displaying
@@ -116,17 +121,3 @@ if st.button('Transform Message'):
     else:
         st.write('Transformed Message:')
         st.success(transformed_message)
-
-# Abstract to sell the idea to your manager
-st.markdown("""
-## Boosting Creativity and Productivity with Generative AI for Stylus
-
-In the evolving landscape of digital communication, our generative AI tool stands out by transforming stylus-written notes into elaborate text, enhancing both creativity and productivity. Leveraging state-of-the-art AI, the tool interprets brief handwritten inputs and enriches them with contextual expansions or stylistic transformations, from formal tones to creative prose.
-
-### Key Insights:
-- **Personalization & Creativity**: Users express more freely with stylus inputs, fostering a personal and creative touch in digital communication.
-- **Time Efficiency**: Preliminary data suggests that composing messages with our tool can be up to **70-80% faster** than traditional typing for quick notes. For more complex compositions, the efficiency gains are even more pronounced, potentially saving users several minutes per message.
-- **User Engagement**: By reducing the effort to create content, we anticipate increased user engagement, as the tool empowers users to convey more with less effort.
-
-Incorporating this tool can redefine user interaction with digital devices, making stylus use not just an alternative but a preferred mode of communication for its simplicity, speed, and creative latitude. This innovation is poised to set a new standard in user productivity and engagement in digital communication platforms.
-""")
