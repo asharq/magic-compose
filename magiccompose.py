@@ -17,30 +17,24 @@ bedrock_client = boto3.client(
 def craft_prompt(message, feature, detail):
     """ Generate the appropriate prompt for each feature """
     if feature == 'Change writing tone':
-        style_prompts = {
-            'Emojify': "Please emojify the following message and return only the emojified text:",
-            'Make Formal': "Please make the following message more formal and return only the formal text:",
-            'Make Polite': "Please make the following message more polite and return only the polite text:",
-            'Shakespearify': "Please rewrite the following message in Shakespearean style and return only the Shakespearean text:",
-            'Excited!': "Please rewrite the following message to sound more excited and return only the excited text:",
-            'Chill': "Please make the following message sound more chill and relaxed and return only the chill text:",
-            'Lyrical': "Please turn the following message into a short lyrical verse and return only the verse:",
-            'Custom': f"Please rewrite the following message to sound '{detail}' and return only the rewritten text:"
-        }
-        return f"Human: {style_prompts.get(detail, style_prompts['Custom'])} '{message}'\n\nAssistant:"
+        return f"Human: Please transform the following message according to the specified style: '{detail}'. Return only the transformed text: '{message}'\n\nAssistant:"
     elif feature == 'Spelling and grammar':
         return f"Human: Please correct any spelling and grammar mistakes in the following message and return only the corrected text: '{message}'\n\nAssistant:"
     elif feature == 'Shorten/elaborate':
-        action = "expand with more details and return only the expanded text" if detail == "elaborate" else "shorten and return only the shortened text"
-        return f"Human: Please {action} the following message: '{message}'\n\nAssistant:"
+        action = "expand with more details" if detail == "elaborate" else "shorten"
+        return f"Human: Please {action} the following message and return only the text: '{message}'\n\nAssistant:"
     elif feature == 'Translation':
         return f"Human: Please translate the following message into {detail} and return only the translated text: '{message}'\n\nAssistant:"
+    elif feature == 'Expand My Writing':
+        return f"Human: Please generate three possible continuations for the following message: '{message}'\n\nAssistant:"
+    elif feature == 'Analyze My Writing':
+        return f"Human: Please analyze the following message and provide detailed feedback and suggestions for improvement, and also return a revised version of the text: '{message}'\n\nAssistant:"
 
 def send_request_to_bedrock(message, feature, detail):
     """ Send the crafted prompt to AWS Bedrock and return the model's response """
     prompt = craft_prompt(message, feature, detail)
     logging.info("Sending prompt to model: %s", prompt)
-    request_body = json.dumps({"prompt": prompt, "max_tokens_to_sample": 100, "temperature": 0.7, "top_p": 0.9})
+    request_body = json.dumps({"prompt": prompt, "max_tokens_to_sample": 500, "temperature": 0.7, "top_p": 0.9})
     logging.info("Raw request body: %s", request_body)
     
     try:
@@ -63,7 +57,7 @@ def send_request_to_bedrock(message, feature, detail):
 # Streamlit UI for the app
 st.title('Magic Compose: Enhance your writing with AI')
 user_message = st.text_area("Enter your message:", "How are you?")
-features = ['Change writing tone', 'Spelling and grammar', 'Shorten/elaborate', 'Translation']
+features = ['Change writing tone', 'Spelling and grammar', 'Shorten/elaborate', 'Translation', 'Expand My Writing', 'Analyze My Writing']
 selected_feature = st.radio("Select a feature:", features)
 
 # Initialize detail variable
@@ -78,6 +72,8 @@ elif selected_feature == 'Shorten/elaborate':
     detail = st.radio("Do you want to shorten or elaborate?", ('shorten', 'elaborate'))
 elif selected_feature == 'Translation':
     detail = st.text_input("Enter target language (e.g., French, Spanish):")
+elif selected_feature == 'Expand My Writing' or selected_feature == 'Analyze My Writing':
+    detail = 'generate continuations' if selected_feature == 'Expand My Writing' else 'analyze text'  # Simplified handling for the example
 
 # Button to initiate the process
 if st.button('Apply Feature'):
@@ -85,4 +81,6 @@ if st.button('Apply Feature'):
     if result_message.startswith("Error:"):
         st.error(result_message)
     else:
-        st.success(result_message)
+        st.success("Here's the result:")
+        st.write(result_message)
+
